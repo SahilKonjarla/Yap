@@ -11,9 +11,6 @@ const LoginForm = () => {
     })
 
     const navigate = useNavigate();
-    const goToHomePage = () => {
-        navigate('/');
-    };
 
     const handleInput = (event) => {
         const { name, value } = event.target;
@@ -27,7 +24,7 @@ const LoginForm = () => {
             password: values.password
         };
 
-        // fetch the post method from the server
+        // User Authentication
         return fetch(`http://localhost:5001/login`, {
             method: 'POST',
             headers: {
@@ -41,9 +38,9 @@ const LoginForm = () => {
             })
             .then(data => {
                 if (data.Login) {
-                    goToHomePage();
+                    navigate('/');
                 } else {
-                    alert('Credentials Not Found');
+                    alert('Invalid Username or Password');
                 }
             })
             .catch((error) => {

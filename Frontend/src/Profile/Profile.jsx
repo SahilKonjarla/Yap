@@ -28,7 +28,7 @@ const Profile = () => {
                                 <span>USA</span>
                             </div>
                         </div>
-                        <button>follow</button>
+                        <button>Follow</button>
                     </div>
                     <div className="right">
                         <IoMdMore />

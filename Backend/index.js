@@ -62,7 +62,7 @@ app.post("/signup",async(req, res) => {
 
       if (result.rows.length > 0) {
          const { password, ...newUser } = result.rows[0];
-         res.status(201).json(newUser);
+         res.status(201).json({newUser, Signup: true, success: true});
       } else {
          throw new Error("Insert Failed");
       }
@@ -185,6 +185,37 @@ app.delete("/delete", async (req, res) => {
 });
 
 // End of User Related Middleware //
+
+// User Data Middleware //
+app.post("/createuser", async (req, res) => {
+   const { name, profilepic} = req.body;
+
+   try {
+      console.log(req.body);
+      existingUserQuery = "SELECT * FROM user_data WHERE name = $1";
+      const existingUser = await pool.query(existingUserQuery, [name]);
+      if (existingUser.rows.length > 0) {
+         return res.status(400).json({error: "user_data already exists"});
+      }
+      const query = "INSERT INTO user_data (name, profilepic) VALUES($1, $2) RETURNING *";
+      const values = [name, profilepic];
+      const result = await pool.query(query, values);
+      console.log(result.rows.length);
+
+      if (result.rows.length) {
+         const { name, ...newUserData } = result.rows[0];
+         res.status(201).json({newUserData, currentUser: true, success: true});
+      } else {
+         throw new Error("Insert Failed");
+      }
+
+   } catch (err) {
+      console.log("here1");
+      console.error("Error on /createuser:", err)
+      res.status(500).json('Server Error');
+   }
+})
+
 
 // App is going to be listening for connections on port 1234
 app.listen(5001, () => {

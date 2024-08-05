@@ -8,9 +8,6 @@ import PasswordStrengthMeter from './passwordStrength'
 function Signup() {
     // State function to travel to the main page after successful login
     const navigate = useNavigate();
-    const goToLoginPage = () => {
-        navigate('/login');
-    };
 
     // Keep track of the username, email, and password
     const [values, setValues] = useState({
@@ -33,6 +30,24 @@ function Signup() {
         setRePassword(event.target.value);
     };
 
+    const createUserData = (values) => {
+        fetch("/createuser", {
+            method: "POST",
+            headers: {
+                'Content-Type' : 'application/json'
+            },
+            body: JSON.stringify({
+                name: values.username,
+                profilepic: "/Home/assets/blank-profile-picture-973460_1280.png"
+            }),
+        })
+            .then(res => res.json())
+            .then(data => {
+                navigate('/login')
+            })
+            .catch(err => console.log(err));
+    }
+
     // Handle function when submit button is added
     const handleSubmit = async(event) => {
         event.preventDefault();
@@ -51,8 +66,7 @@ function Signup() {
         })
             .then(response => response.json())
             .then(data => {
-                console.log('Success:', data);
-                goToLoginPage();
+                createUserData(values);
             })
             .catch((error) => console.error('Error:', error));
     };
