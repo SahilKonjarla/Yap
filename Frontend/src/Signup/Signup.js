@@ -31,7 +31,7 @@ function Signup() {
     };
 
     const createUserData = (values) => {
-        fetch("/createuser", {
+        fetch("http://localhost:5001/createuser", {
             method: "POST",
             headers: {
                 'Content-Type' : 'application/json'

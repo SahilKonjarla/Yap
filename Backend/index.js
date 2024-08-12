@@ -210,7 +210,6 @@ app.post("/createuser", async (req, res) => {
       }
 
    } catch (err) {
-      console.log("here1");
       console.error("Error on /createuser:", err)
       res.status(500).json('Server Error');
    }
