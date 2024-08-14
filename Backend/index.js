@@ -89,7 +89,7 @@ app.post("/login", async (req, res) => {
          req.session.username = user.username;
          res.json({ Login: true, success: true, message: "Login successful" });
       } else {
-         res.status(401).json({ Login: false, success: false, message: "Invalid password" });
+         res.status(401).json({ Login: false, success: false, message: "Invalid password or username" });
       }
    } catch (err) {
       console.error("Error on /login:", err.message);
@@ -191,7 +191,6 @@ app.post("/createuser", async (req, res) => {
    const { name, profilepic} = req.body;
 
    try {
-      console.log(req.body);
       existingUserQuery = "SELECT * FROM user_data WHERE name = $1";
       const existingUser = await pool.query(existingUserQuery, [name]);
       if (existingUser.rows.length > 0) {
@@ -200,11 +199,10 @@ app.post("/createuser", async (req, res) => {
       const query = "INSERT INTO user_data (name, profilepic) VALUES($1, $2) RETURNING *";
       const values = [name, profilepic];
       const result = await pool.query(query, values);
-      console.log(result.rows.length);
 
       if (result.rows.length) {
          const { name, ...newUserData } = result.rows[0];
-         res.status(201).json({newUserData, currentUser: true, success: true});
+         res.status(201).json({success: true});
       } else {
          throw new Error("Insert Failed");
       }
@@ -212,6 +210,25 @@ app.post("/createuser", async (req, res) => {
    } catch (err) {
       console.error("Error on /createuser:", err)
       res.status(500).json('Server Error');
+   }
+})
+
+// Get a user metadata
+app.post("/getuser", async (req, res) => {
+   const { name }  = req.body;
+
+   try {
+      const query = "SELECT * FROM user_data WHERE name = $1";
+      const values = [name];
+      const results = await pool.query(query, values);
+
+      if (results.rows.length > 0) {
+         res.status(200).json(results.rows[0]);
+      } else {
+         res.status(404).json({error: "User not found"});
+      }
+   } catch (err) {
+      console.error(err.message);
    }
 })
 

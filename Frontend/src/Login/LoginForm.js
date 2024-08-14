@@ -1,8 +1,9 @@
-import React, {useState} from 'react';
+import React, {useState, useContext} from 'react';
 import './LoginForm.css';
 import { FaUser } from "react-icons/fa";
 import { FaLock } from "react-icons/fa";
 import {Link, useNavigate} from 'react-router-dom';
+import { AuthContext } from "../Home/context/authContext";
 
 const LoginForm = () => {
     const [values, setValues] = useState({
@@ -17,12 +18,15 @@ const LoginForm = () => {
         setValues(prevState => ({ ...prevState, [name]: value }));
     }
 
+    const { login } = useContext(AuthContext)
+
     const handleSubmit = async (event) => {
         event.preventDefault();
         const requestBody = {
             username: values.username,
             password: values.password
         };
+        const name = values.username;
 
         // User Authentication
         return fetch(`http://localhost:5001/login`, {
@@ -37,8 +41,12 @@ const LoginForm = () => {
                 return response.json();
             })
             .then(data => {
+                console.log(data)
                 if (data.Login) {
-                    navigate('/');
+                    const exists = login(name);
+                    if (!exists) {
+                        navigate('/');
+                    }
                 } else {
                     alert('Invalid Username or Password');
                 }

@@ -65,3 +65,17 @@
     color: #333;
     font-weight: 700;
 }
+
+.login-link p a {
+    position: relative;
+    left: 100px;
+    color: #DFE0DF;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.login-link p a:hover {
+    color: #DFE0DF;
+    text-decoration: underline;
+    font-weight: 600;
+}

@@ -10,18 +10,20 @@ import LeftBar from "./Home/leftbar/LeftBar";
 import RightBar from "./Home/rightbar/RightBar";
 import Profile from "./Profile/Profile";
 import {DarkModeContext} from "./Home/context/darkModeContext";
+import {AuthContext} from "./Home/context/authContext";
 
 function App() {
 
-    const currentUser = true
+    const {currentUser} = useContext(AuthContext)
 
     const {darkMode} = useContext(DarkModeContext)
-
     const ProtectedRoute = ({children}) => {
-        if (!currentUser) {
+        if (currentUser != null) {
+            return children
+        } else {
+            console.log("Not logged in")
             return <Navigate to="/login" />
         }
-        return children
     }
 
     const Layout = () => {

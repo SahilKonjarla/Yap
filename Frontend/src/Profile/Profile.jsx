@@ -2,8 +2,12 @@ import "./profile.scss";
 import { MdOutlinePlace } from "react-icons/md";
 import { IoMdMore } from "react-icons/io";
 import Posts from "../Home/posts/Posts"
+import { AuthContext } from "../Home/context/authContext"
+import { useContext } from "react";
 
 const Profile = () => {
+    const {currentUser} = useContext(AuthContext);
+
     return (
         <div className="profile">
             <div className="images">
@@ -13,15 +17,15 @@ const Profile = () => {
                     className="cover"
                 />
                 <img
-                    src="https://images.pexels.com/photos/14028501/pexels-photo-14028501.jpeg?auto=compress&cs=tinysrgb&w=1600&lazy=load"
+                    src={`${process.env.PUBLIC_URL}/${currentUser.profilepic}`}
                     alt=""
                     className="profilePic"
                 />
             </div>
             <div className="profileContainer">
                 <div className="uInfo">
-                    <div className="center">
-                        <span>Jane Doe</span>
+                    <div className="center" >
+                        <span>{currentUser.name}</span>
                         <div className="info">
                             <div className="item">
                                 <MdOutlinePlace />

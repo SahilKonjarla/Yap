@@ -2,7 +2,7 @@ import React, {useState} from "react";
 import './Signup.css';
 import { FaUser } from "react-icons/fa";
 import { FaLock } from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import PasswordStrengthMeter from './passwordStrength'
 
 function Signup() {
@@ -38,7 +38,7 @@ function Signup() {
             },
             body: JSON.stringify({
                 name: values.username,
-                profilepic: "/Home/assets/blank-profile-picture-973460_1280.png"
+                profilepic: "blank-profile-pic.png"
             }),
         })
             .then(res => res.json())
@@ -70,7 +70,6 @@ function Signup() {
             })
             .catch((error) => console.error('Error:', error));
     };
-
     return (
         <div className={'wrapper'}>
             <form onSubmit={handleSubmit}>
@@ -104,6 +103,10 @@ function Signup() {
 
                 <div>
                     <button type={"submit"}>Create Account</button>
+                </div>
+
+                <div className={"login-link"}>
+                    <p><Link to={'/login'}>Return To Login</Link></p>
                 </div>
 
                 <footer className={'copyright'}>&copy; 2024 Yap. All rights reserved.</footer>

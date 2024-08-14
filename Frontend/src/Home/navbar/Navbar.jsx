@@ -6,10 +6,12 @@ import { BiBell } from "react-icons/bi";
 import { CiMail } from "react-icons/ci";
 import {Link, useNavigate} from "react-router-dom";
 import {DarkModeContext} from "../context/darkModeContext";
+import {AuthContext} from "../context/authContext";
 
 const Navbar = () => {
 
     const { toggle, darkMode } = useContext(DarkModeContext);
+    const { currentUser } = useContext(AuthContext);
 
     const navigate = useNavigate();
 
@@ -19,7 +21,6 @@ const Navbar = () => {
                 <Link to={'/'} style={{textDecoration: 'none'}}>
                     <span>Yap</span>
                 </Link>
-                <BiHomeAlt2 onClick={() => navigate("/")}/>
                 {darkMode ? (
                     <MdOutlineWbSunny onClick={toggle}/>
                 ) : (
@@ -32,12 +33,16 @@ const Navbar = () => {
                 </div>
             </div>
             <div className="right">
-                <MdOutlinePerson />
                 <CiMail />
                 <BiBell />
                 <div className="user">
-                    <img src={"https://images.pexels.com/photos/3228727/pexels-photo-3228727.jpeg?auto=compress&cs=tinysrgb&w=1600"} alt={""}/>
-                    <span>John Doe</span>
+                    <img src={`${process.env.PUBLIC_URL}/${currentUser.profilepic}`} alt={""}/>
+                    <Link
+                        to={`/profile/${currentUser.uuid}`}
+                        style={{ textDecoration: "none", color: "inherit" }}
+                    >
+                        <span className="name">{currentUser.name}</span>
+                    </Link>
                 </div>
             </div>
         </div>

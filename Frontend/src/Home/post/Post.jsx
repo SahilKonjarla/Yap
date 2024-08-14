@@ -6,10 +6,13 @@ import { IoShareSocialOutline } from "react-icons/io5";
 import { MdMoreHoriz } from "react-icons/md";
 import { Link } from "react-router-dom";
 import Comments from "../comments/Comments";
-import { useState } from "react";
+import { useState, useContext } from "react";
+import { AuthContext } from "../context/authContext"
 
 const Post = ({ post }) => {
     const [commentOpen, setCommentOpen] = useState(false);
+    const currentUser = useContext(AuthContext);
+
 
     //TEMPORARY
     const liked = false;
@@ -22,7 +25,7 @@ const Post = ({ post }) => {
                         <img src={"https://images.pexels.com/photos/1036623/pexels-photo-1036623.jpeg?auto=compress&cs=tinysrgb&w=1600"} alt="" />
                         <div className="details">
                             <Link
-                                to={`/profile/${post.userId}`}
+                                to={`/profile/${post.id}`}
                                 style={{ textDecoration: "none", color: "inherit" }}
                             >
                                 <span className="name">{post.name}</span>
