@@ -38,7 +38,8 @@ function Signup() {
             },
             body: JSON.stringify({
                 name: values.username,
-                profilepic: "blank-profile-pic.png"
+                profilepic: "blank-profile-pic.png",
+                coverpic: "coverpic.jpeg"
             }),
         })
             .then(res => res.json())

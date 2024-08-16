@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "body-parser": "^1.20.2",
+    "jsonwebtoken": "^9.0.2",
     "react-router-dom": "^6.26.0",
     "sass": "^1.77.8",
     "sass-loader": "^16.0.0"

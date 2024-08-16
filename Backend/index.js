@@ -7,6 +7,7 @@ const bcrypt = require("bcrypt");
 const pool = require("./db");
 const {values} = require("pg/lib/native/query");
 const bodyParser = require("body-parser");
+const jwt = require("jsonwebtoken");
 
 // Middleware
 app.use(cors({
@@ -188,7 +189,7 @@ app.delete("/delete", async (req, res) => {
 
 // User Data Middleware //
 app.post("/createuser", async (req, res) => {
-   const { name, profilepic} = req.body;
+   const { name, profilepic, coverpic} = req.body;
 
    try {
       existingUserQuery = "SELECT * FROM user_data WHERE name = $1";
@@ -196,8 +197,8 @@ app.post("/createuser", async (req, res) => {
       if (existingUser.rows.length > 0) {
          return res.status(400).json({error: "user_data already exists"});
       }
-      const query = "INSERT INTO user_data (name, profilepic) VALUES($1, $2) RETURNING *";
-      const values = [name, profilepic];
+      const query = "INSERT INTO user_data (name, profilepic, coverpic) VALUES($1, $2, $3) RETURNING *";
+      const values = [name, profilepic, coverpic];
       const result = await pool.query(query, values);
 
       if (result.rows.length) {
