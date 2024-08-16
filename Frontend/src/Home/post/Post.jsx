@@ -22,10 +22,9 @@ const Post = ({ post }) => {
             <div className="container">
                 <div className="user">
                     <div className="userInfo">
-                        <img src={"https://images.pexels.com/photos/1036623/pexels-photo-1036623.jpeg?auto=compress&cs=tinysrgb&w=1600"} alt="" />
                         <div className="details">
                             <Link
-                                to={`/profile/${post.id}`}
+                                to={`/profile/${post.userid}`}
                                 style={{ textDecoration: "none", color: "inherit" }}
                             >
                                 <span className="name">{post.name}</span>

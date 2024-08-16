@@ -20,6 +20,7 @@ app.use(bodyParser.json());
 app.use(session({
    secret: 'secret',
    resave: false,
+   sameSite: 'none',
    saveUninitialized: false,
    cookie: {
       secure: 'auto',
@@ -87,7 +88,11 @@ app.post("/login", async (req, res) => {
       const user = rows[0];
       const isMatch = await bcrypt.compare(password, user.password);
       if (isMatch) {
+         const q = "SELECT uuid FROM user_data where name = $1"
+         const results = await pool.query(q, [username]);
+         const token = jwt.sign({ id: results.rows[0].uuid }, "12345678")
          req.session.username = user.username;
+         res.cookie("accessToken", token, { httpOnly: true }).status(200);
          res.json({ Login: true, success: true, message: "Login successful" });
       } else {
          res.status(401).json({ Login: false, success: false, message: "Invalid password or username" });
@@ -97,6 +102,18 @@ app.post("/login", async (req, res) => {
       res.status(500).json({ success: false, message: "Server Error" });
    }
 });
+
+app.post("/logout", async (req, res) => {
+   try {
+      res.clearCookie("accessToken", {
+         secure: 'true',
+         sameSite: 'none',
+      }).status(200).json({ message: "Logout successful" });
+   } catch (err) {
+      console.error("Error on /logout:", err.message);
+      res.status(501).json({ success: false, message: "Server Error" });
+   }
+})
 
 // Update a User by email or username
 app.put("/update/put", async(req,res) => {
@@ -202,12 +219,10 @@ app.post("/createuser", async (req, res) => {
       const result = await pool.query(query, values);
 
       if (result.rows.length) {
-         const { name, ...newUserData } = result.rows[0];
          res.status(201).json({success: true});
       } else {
          throw new Error("Insert Failed");
       }
-
    } catch (err) {
       console.error("Error on /createuser:", err)
       res.status(500).json('Server Error');
@@ -230,6 +245,25 @@ app.post("/getuser", async (req, res) => {
       }
    } catch (err) {
       console.error(err.message);
+   }
+})
+
+// Get user posts
+app.post("/getposts", async (req, res) => {
+   const { userid }  = req.body;
+
+   try {
+      const query = "SELECT p.*, u.uuid AS userID, name, profilpic FROM posts AS p JOIN user_data AS u ON (u.uuid = p.userid)"
+      const result = await pool.query(query, [userid]);
+
+      if (result.rows.length > 0) {
+         res.status(200).json(results.rows[0]);
+      } else {
+         res.status(404).json({error: "Post not found"});
+      }
+   } catch (err) {
+      console.error(err.message);
+      res.status(500).json('Server Error');
    }
 })
 
