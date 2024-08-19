@@ -248,9 +248,18 @@ app.post("/getuser", async (req, res) => {
    }
 })
 
+// Post Middleware //
+
 // Get user posts
 app.post("/getposts", async (req, res) => {
    const { userid }  = req.body;
+   const token = req.cookie.accessToken;
+   if (!token) return res.status(401).json({error: "Not logged in"});
+
+   jwt.verify(token, "12345678", (err, decoded) => {
+      if (err) return res.status(403).json({error: "Unauthorized"});
+      console.log(userid)
+   })
 
    try {
       const query = "SELECT p.*, u.uuid AS userID, name, profilpic FROM posts AS p JOIN user_data AS u ON (u.uuid = p.userid)"
@@ -260,6 +269,31 @@ app.post("/getposts", async (req, res) => {
          res.status(200).json(results.rows[0]);
       } else {
          res.status(404).json({error: "Post not found"});
+      }
+   } catch (err) {
+      console.error(err.message);
+      res.status(500).json('Server Error');
+   }
+})
+
+// Make a post
+app.post("/addpost", async (req, res) => {
+   const { userid, content } = req.body;
+   const token = req.cookie.accessToken;
+   if (!token) return res.status(401).json("Not logged in!");
+
+   jwt.verify(token, "12345678", (err, userInfo) => {
+      if (err) return res.status(403).json("Token is not valid!");
+   });
+
+   try {
+      const query = "INSERT INTO posts(userid, content, created) VALUES ($1, $2, NOW()) RETURNING *"
+      const values = [userid, content];
+      const results = await pool.query(query, values);
+      if (result.rows.length > 0) {
+         res.status(200).json({success: true});
+      } else {
+         throw new Error("Insert Failed");
       }
    } catch (err) {
       console.error(err.message);

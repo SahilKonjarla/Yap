@@ -11,21 +11,22 @@ import RightBar from "./Home/rightbar/RightBar";
 import Profile from "./Profile/Profile";
 import {DarkModeContext} from "./Home/context/darkModeContext";
 import {AuthContext} from "./Home/context/authContext";
-import { QueryClient, QueryClientProvider} from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider} from '@tanstack/react-query';
+
+const queryClient = new QueryClient();
 
 function App() {
 
     const {currentUser} = useContext(AuthContext)
 
-    const queryClient = new QueryClient()
-
     const {darkMode} = useContext(DarkModeContext)
+
     const ProtectedRoute = ({children}) => {
-        if (currentUser != null) {
-            return children
-        } else {
+        if (!currentUser) {
             console.log("Not logged in")
             return <Navigate to="/login" />
+        } else {
+            return children;
         }
     }
 
@@ -43,9 +44,8 @@ function App() {
                     </div>
                 </div>
             </QueryClientProvider>
-
-        )
-    }
+        );
+    };
 
     const router = createBrowserRouter([
         {
