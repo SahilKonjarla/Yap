@@ -91,6 +91,7 @@ app.post("/login", async (req, res) => {
          const q = "SELECT uuid FROM user_data where name = $1"
          const results = await pool.query(q, [username]);
          const token = jwt.sign({ id: results.rows[0].uuid }, "12345678")
+         console.log(results.rows[0].uuid)
          req.session.username = user.username;
          res.cookie("accessToken", token, { httpOnly: true }).status(200);
          res.json({ Login: true, success: true, message: "Login successful" });
@@ -118,6 +119,12 @@ app.post("/logout", async (req, res) => {
 // Update a User by email or username
 app.put("/update/put", async(req,res) => {
    const { login, newPassword } = req.query;
+   const token = req.cookies.accessToken;
+   if (!token) return res.status(401).json("Not logged in!");
+
+   jwt.verify(token, "12345678", (err, userInfo) => {
+      if (err) return res.status(403).json("Token is not valid!");
+   })
 
    if (!login) {
       return res.status(400).json({ error: "Missing 'login' query parameter" });
@@ -152,6 +159,12 @@ app.put("/update/put", async(req,res) => {
 // Delete a User by email or username
 app.delete("/userdelete/delete", async(req,res) => {
    const { login, password } = req.query;
+   const token = req.cookies.accessToken;
+   if (!token) return res.status(401).json("Not logged in!");
+
+   jwt.verify(token, "12345678", (err, userInfo) => {
+      if (err) return res.status(403).json("Token is not valid!");
+   })
 
    if (!login || !password) {
       return res.status(400).json({ error: "Missing 'login' and/or 'password' query parameter" });
@@ -252,18 +265,24 @@ app.post("/getuser", async (req, res) => {
 
 // Get user posts
 app.post("/getposts", async (req, res) => {
-   const { userid }  = req.body;
    const token = req.cookies.accessToken;
    if (!token) return res.status(401).json("Not logged in!");
 
-   jwt.verify(token, "secretkey", (err, userInfo) => {
+   const currentUserid = jwt.verify(token, "12345678", (err, userInfo) => {
       if (err) return res.status(403).json("Token is not valid!");
+      return userInfo.id;
    })
 
    try {
-      const query = "SELECT p.*, u.uuid AS userId, name, profilepic FROM posts AS p JOIN user_data AS u ON (u.uuid = p.userid)"
-      const values = [userid];
-      const result = await pool.query(query);
+      const query =
+          currentUserid === "undefined"
+              ? "SELECT p.*, u.uuid AS userId, name, profilepic FROM posts AS p JOIN user_data AS u ON (u.uuid = p.userId) WHERE p.userid = $1 ORDER BY p.created DESC"
+              : "SELECT p.*, u.uuid AS userId, name, profilepic FROM posts AS p JOIN user_data AS u ON (u.uuid = p.userId) LEFT JOIN relationships AS r ON (p.userid = r.followeduserid) WHERE r.followeruserid= $1 OR p.userid = $2 ORDER BY p.created DESC";
+      const values = currentUserid === "undefined" ? [currentUserid] : [currentUserid, currentUserid];
+      const result = await pool.query(query, values);
+      console.log(values)
+      console.log(query)
+      console.log(result.rows);
 
       if (result.rows.length > 0) {
          res.status(200).json(result.rows);
@@ -278,17 +297,18 @@ app.post("/getposts", async (req, res) => {
 
 // Make a post
 app.post("/addpost", async (req, res) => {
-   const { uuid, content } = req.body;
+   const { content } = req.body;
    const token = req.cookies.accessToken;
    if (!token) return res.status(401).json("Not logged in!");
 
-   jwt.verify(token, "secretkey", (err, userInfo) => {
+   const currentUserid = jwt.verify(token, "12345678", (err, userInfo) => {
       if (err) return res.status(403).json("Token is not valid!");
+      return userInfo.id;
    })
 
    try {
       const query = "INSERT INTO posts(userid, content, created) VALUES ($1, $2, NOW()) RETURNING *"
-      const values = [uuid, content];
+      const values = [currentUserid, content];
       const results = await pool.query(query, values);
       if (results.rows.length > 0) {
          res.status(200).json({success: true});
@@ -302,7 +322,254 @@ app.post("/addpost", async (req, res) => {
 })
 
 // Delete a post
+app.post("/deletepost", async (req, res) => {
+   const { postid} = req.body;
 
+   const token = req.cookies.accessToken;
+   if (!token) return res.status(401).json("Not logged in!");
+
+   const currentUserid = jwt.verify(token, "12345678", (err, userInfo) => {
+      if (err) return res.status(403).json("Token is not valid!");
+      return userInfo.id;
+   })
+
+   try {
+      const query = "DELETE FROM posts WHERE postid = $1 and userid = $2"
+      const values = [postid, currentUserid];
+      const result = await pool.query(query, values);
+
+      if (result.rows.length > 0) {
+         res.status(200).json({success: true});
+      }
+   } catch (err) {
+      console.log(err)
+      res.status(500).json('Server Error');
+   }
+})
+
+// End of post Middleware
+
+// Relationships Middleware //
+
+// Get a relationship
+app.post("/getrelationship", async (req, res) => {
+   const { followedUserid } = req.body;
+
+   try {
+      const query = 'SELECT followeruserid FROM relationships WHERE followeduserid = $1'
+      const values = [followedUserid];
+      const result = await pool.query(query, values);
+
+      if (result.rows.length > 0) {
+         res.status(200).json({success: true});
+      }
+   } catch (err) {
+      console.error(err.message);
+      res.status(500).json('Server Error');
+   }
+});
+
+// Add a relationship
+app.post("/addrelationship", async (req, res) => {
+   const { followedid } = req.body;
+   const token = req.cookies.accessToken;
+   if (!token) return res.status(401).json("Not logged in!");
+
+   const currentUserid = jwt.verify(token, "12345678", (err, userInfo) => {
+      if (err) return res.status(403).json("Token is not valid!");
+      return userInfo.id;
+   })
+
+   try {
+      const query = "INSERT INTO relationships(followeruserid, followeduserid) VALUES ($1, $2) RETURNING *"
+      const values = [currentUserid, followedid];
+      const result = await pool.query(query, values);
+
+      if (result.rows.length > 0) {
+         res.status(200).json({success: true});
+      } else {
+         throw new Error("Insert Failed");
+      }
+   } catch (err) {
+      console.error(err.message);
+      res.status(500).json('Server Error');
+   }
+})
+
+// Delete relationship
+app.post("/deleterelationship", async (req, res) => {
+   const { followedUserid } = req.body;
+   const token = req.cookies.accessToken;
+   if (!token) return res.status(401).json("Not logged in!");
+
+   const currentUserid = jwt.verify(token, "12345678", (err, userInfo) => {
+      if (err) return res.status(403).json("Token is not valid!");
+      return userInfo.id;
+   })
+
+   try {
+      const query = "DELETE FROM relationships WHERE followerUserId = $1 AND followedUserId = $2"
+      const values = [currentUserid, followedUserid];
+      const result = await pool.query(query, values);
+
+      if (result.rows.length > 0) {
+         res.status(200).json({success: true});
+      }
+   } catch (err) {
+      console.error(err.message);
+      res.status(500).json('Server Error');
+   }
+})
+
+// End of Relationship Middleware //
+
+// Comments Middleware //
+
+// Get Comments
+app.post("/getcomments", async (req, res) => {
+   const { postid } = req.body;
+   const token = req.cookies.accessToken;
+   if (!token) return res.status(401).json("Not logged in!");
+
+   jwt.verify(token, "12345678", (err, userInfo) => {
+      if (err) return res.status(403).json("Token is not valid!");
+   })
+
+   try {
+      const query = "SELECT c.*, u.uuid AS userId, name, profilepic FROM comments AS c JOIN user_data AS u ON (u.uuid = c.commentuserid) WHERE c.commentpostid = $1 ORDER BY c.created DESC"
+      const values = [postid]
+      const result = await pool.query(query, values);
+
+      if (result.rows.length > 0) {
+         res.status(200).json({success: true});
+      }
+   } catch (err) {
+      console.error(err.message);
+      res.status(500).json('Server Error');
+   }
+})
+
+// Add a Comment
+app.post("/getcomments", async (req, res) => {
+   const { content, postid } = req.body;
+   const token = req.cookies.accessToken;
+   if (!token) return res.status(401).json("Not logged in!");
+
+   const currentUserid = jwt.verify(token, "12345678", (err, userInfo) => {
+      if (err) return res.status(403).json("Token is not valid!");
+      return userInfo.id;
+   })
+
+   try {
+      const query = "INSERT INTO comments(content, created, commentuserid, commentpostid) VALUES ($1, NOW(), $2, $3)";
+      const values = [content, currentUserid, postid]
+      const result = await pool.query(query, values);
+
+      if (result.rows.length > 0) {
+         res.status(200).json({success: true});
+      }
+   } catch (err) {
+      console.error(err.message);
+      res.status(500).json('Server Error');
+   }
+})
+
+// Delete Comment
+app.post("/deletecomment", async (req, res) => {
+   const { commentid } = req.body;
+   const token = req.cookies.accessToken;
+   if (!token) return res.status(401).json("Not logged in!");
+
+   const currentUserid = jwt.verify(token, "12345678", (err, userInfo) => {
+      if (err) return res.status(403).json("Token is not valid!");
+      return userInfo.id;
+   })
+
+   try {
+      const query = 'DELETE FROM comments WHERE commentid = $1 AND commentuserid = $2';
+      const values = [commentid, currentUserid];
+      const result = await pool.query(query, values);
+
+      if (result.rows.length > 0) {
+         res.status(200).json({success: true});
+      }
+   } catch (err) {
+      console.error(err.message);
+      res.status(500).json('Server Error');
+   }
+})
+
+// End of Comments Middleware //
+
+// Likes Middleware //
+
+// Get likes
+app.post("/getlikes", async (req, res) => {
+   const { postid } = req.body;
+
+   try {
+      const query = "SELECT likesuserid FROM likes WHERE likespostid = $1"
+      const values = [postid]
+      const result = await pool.query(query, values);
+
+      if (result.rows.length > 0) {
+         res.status(200).json({success: true});
+      }
+   } catch (err) {
+      console.error(err.message);
+      res.status(500).json('Server Error');
+   }
+})
+
+// Add likes
+app.post("/addlikes", async (req, res) => {
+   const { postid } = req.body;
+   const token = req.cookies.accessToken;
+   if (!token) return res.status(401).json("Not logged in!");
+
+   const currentUserid = jwt.verify(token, "12345678", (err, userInfo) => {
+      if (err) return res.status(403).json("Token is not valid!");
+      return userInfo.id;
+   })
+
+   try {
+      const query = "INSERT INTO likes(likesuserid, likespostid) VALUES ($1, $2)"
+      const values = [currentUserid, postid]
+      const result = await pool.query(query, values);
+
+      if (result.rows.length > 0) {
+         res.status(200).json({success: true});
+      }
+   } catch (err) {
+      console.error(err.message);
+      res.status(500).json('Server Error');
+   }
+})
+
+// Delete likes
+app.post("/deletelikes", async (req, res) => {
+   const { postid } = req.body;
+   const token = req.cookies.accessToken;
+   if (!token) return res.status(401).json("Not logged in!");
+
+   const currentUserid = jwt.verify(token, "12345678", (err, userInfo) => {
+      if (err) return res.status(403).json("Token is not valid!");
+      return userInfo.id;
+   })
+
+   try {
+      const query = "DELETE FROM likes WHERE likesuserid = $1 AND likespostid = $2"
+      const values = [currentUserid, postid]
+      const result = await pool.query(query, values);
+
+      if (result.rows.length > 0) {
+         res.status(200).json({success: true});
+      }
+   } catch (err) {
+      console.error(err.message);
+      res.status(500).json('Server Error');
+   }
+})
 
 // App is going to be listening for connections on port 1234
 app.listen(5001, () => {

@@ -2,7 +2,7 @@ import "./posts.scss"
 import Post from "../post/Post"
 import { useQuery } from '@tanstack/react-query'
 
-const Posts = () => {
+const Posts = ({userId}) => {
 
     const { isPending, error, data } = useQuery({
         queryKey: ['posts'],
@@ -13,7 +13,7 @@ const Posts = () => {
                     'Content-Type': 'application/json',
                 },
                 credentials: 'include',
-                body: JSON.stringify(),
+                body: JSON.stringify({userId}),
             })
                 .then((res) => res.json())
                 .then(data => {
