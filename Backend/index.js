@@ -253,20 +253,20 @@ app.post("/getuser", async (req, res) => {
 // Get user posts
 app.post("/getposts", async (req, res) => {
    const { userid }  = req.body;
-   const token = req.cookie.accessToken;
-   if (!token) return res.status(401).json({error: "Not logged in"});
+   const token = req.cookies.accessToken;
+   if (!token) return res.status(401).json("Not logged in!");
 
-   jwt.verify(token, "12345678", (err, decoded) => {
-      if (err) return res.status(403).json({error: "Unauthorized"});
-      console.log(userid)
+   jwt.verify(token, "secretkey", (err, userInfo) => {
+      if (err) return res.status(403).json("Token is not valid!");
    })
 
    try {
-      const query = "SELECT p.*, u.uuid AS userID, name, profilpic FROM posts AS p JOIN user_data AS u ON (u.uuid = p.userid)"
-      const result = await pool.query(query, [userid]);
+      const query = "SELECT p.*, u.uuid AS userId, name, profilepic FROM posts AS p JOIN user_data AS u ON (u.uuid = p.userid)"
+      const values = [userid];
+      const result = await pool.query(query);
 
       if (result.rows.length > 0) {
-         res.status(200).json(results.rows[0]);
+         res.status(200).json(result.rows);
       } else {
          res.status(404).json({error: "Post not found"});
       }
@@ -278,19 +278,19 @@ app.post("/getposts", async (req, res) => {
 
 // Make a post
 app.post("/addpost", async (req, res) => {
-   const { userid, content } = req.body;
-   const token = req.cookie.accessToken;
+   const { uuid, content } = req.body;
+   const token = req.cookies.accessToken;
    if (!token) return res.status(401).json("Not logged in!");
 
-   jwt.verify(token, "12345678", (err, userInfo) => {
+   jwt.verify(token, "secretkey", (err, userInfo) => {
       if (err) return res.status(403).json("Token is not valid!");
-   });
+   })
 
    try {
       const query = "INSERT INTO posts(userid, content, created) VALUES ($1, $2, NOW()) RETURNING *"
-      const values = [userid, content];
+      const values = [uuid, content];
       const results = await pool.query(query, values);
-      if (result.rows.length > 0) {
+      if (results.rows.length > 0) {
          res.status(200).json({success: true});
       } else {
          throw new Error("Insert Failed");
@@ -300,6 +300,8 @@ app.post("/addpost", async (req, res) => {
       res.status(500).json('Server Error');
    }
 })
+
+// Delete a post
 
 
 // App is going to be listening for connections on port 1234

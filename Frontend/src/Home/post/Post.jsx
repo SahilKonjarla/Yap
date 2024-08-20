@@ -35,8 +35,7 @@ const Post = ({ post }) => {
                     <MdMoreHoriz />
                 </div>
                 <div className="content">
-                    <p>{post.desc}</p>
-                    <img src={post.img} alt="" />
+                    <p>{post.content}</p>
                 </div>
                 <div className="info">
                     <div className="item">
