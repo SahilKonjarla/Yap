@@ -273,6 +273,7 @@ app.post("/getposts", async (req, res) => {
       return userInfo.id;
    })
 
+
    try {
       const query =
           currentUserid === "undefined"
@@ -280,9 +281,6 @@ app.post("/getposts", async (req, res) => {
               : "SELECT p.*, u.uuid AS userId, name, profilepic FROM posts AS p JOIN user_data AS u ON (u.uuid = p.userId) LEFT JOIN relationships AS r ON (p.userid = r.followeduserid) WHERE r.followeruserid= $1 OR p.userid = $2 ORDER BY p.created DESC";
       const values = currentUserid === "undefined" ? [currentUserid] : [currentUserid, currentUserid];
       const result = await pool.query(query, values);
-      console.log(values)
-      console.log(query)
-      console.log(result.rows);
 
       if (result.rows.length > 0) {
          res.status(200).json(result.rows);
@@ -308,7 +306,7 @@ app.post("/addpost", async (req, res) => {
 
    try {
       const query = "INSERT INTO posts(userid, content, created) VALUES ($1, $2, NOW()) RETURNING *"
-      const values = [currentUserid, content];
+      const values = [currentUserid, content.content];
       const results = await pool.query(query, values);
       if (results.rows.length > 0) {
          res.status(200).json({success: true});

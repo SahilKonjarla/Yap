@@ -9,33 +9,24 @@ const Share = () => {
     const { currentUser } = useContext(AuthContext);
     const queryClient = useQueryClient();
 
-    const mutation = useMutation(
-        async (newPost) => {
-            const response = await fetch("http://localhost:5001/addpost", {
+    const mutation = useMutation({
+        mutationFn: (newPost) =>
+            fetch("http://localhost:5001/addpost", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 credentials: "include",
-                body: JSON.stringify(newPost),
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to share post');
-            }
-
-            return response.json();
-        },
-        {
-            onSuccess: () => {
-                // Invalidate and refetch the posts query
-                queryClient.invalidateQueries({ queryKey: ['posts'] });
-            },
-            onError: (error) => {
-                console.error("Error sharing the post:", error);
-            }
+                body: JSON.stringify({content: newPost})
+            })
+                .then(res => res.json())
+                .then(data => {
+                    return data
+                }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['posts']})
         }
-    );
+    });
 
     const handleClick = async (e) => {
         e.preventDefault();
