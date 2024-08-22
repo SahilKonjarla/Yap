@@ -21,15 +21,13 @@ const Posts = ({userId}) => {
                 })
     })
 
-    if (isPending) return 'Loading...'
-
-    if (error) return 'An error has occurred: ' + error.message
-
     return (
         <div className="posts">
-            {data.map((post) => (
-                <Post post={post} key={post.id} />
-            ))}
+            {error
+                ? "Something went wrong!"
+                : isPending
+                    ? "loading"
+                    : data.map((post) => <Post post={post} key={post.postid} />)}
         </div>
     )
 };

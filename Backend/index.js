@@ -261,6 +261,25 @@ app.post("/getuser", async (req, res) => {
    }
 })
 
+// Get a user metadata on uuid
+app.post("/userinfo", async (req, res) => {
+   const { uuid }  = req.body;
+
+   try {
+      const query = "SELECT * FROM user_data WHERE uuid = $1";
+      const values = [uuid];
+      const results = await pool.query(query, values);
+
+      if (results.rows.length > 0) {
+         res.status(200).json(results.rows[0]);
+      } else {
+         res.status(404).json({error: "User not found"});
+      }
+   } catch (err) {
+      console.error(err.message);
+   }
+})
+
 // Post Middleware //
 
 // Get user posts
@@ -321,8 +340,7 @@ app.post("/addpost", async (req, res) => {
 
 // Delete a post
 app.post("/deletepost", async (req, res) => {
-   const { postid} = req.body;
-
+   const { postid } = req.body;
    const token = req.cookies.accessToken;
    if (!token) return res.status(401).json("Not logged in!");
 
@@ -425,7 +443,7 @@ app.post("/deleterelationship", async (req, res) => {
 
 // Get Comments
 app.post("/getcomments", async (req, res) => {
-   const { postid } = req.body;
+   const { postId } = req.body;
    const token = req.cookies.accessToken;
    if (!token) return res.status(401).json("Not logged in!");
 
@@ -435,11 +453,11 @@ app.post("/getcomments", async (req, res) => {
 
    try {
       const query = "SELECT c.*, u.uuid AS userId, name, profilepic FROM comments AS c JOIN user_data AS u ON (u.uuid = c.commentuserid) WHERE c.commentpostid = $1 ORDER BY c.created DESC"
-      const values = [postid]
+      const values = [postId]
       const result = await pool.query(query, values);
 
       if (result.rows.length > 0) {
-         res.status(200).json({success: true});
+         res.status(200).json(result.rows);
       }
    } catch (err) {
       console.error(err.message);
@@ -448,7 +466,7 @@ app.post("/getcomments", async (req, res) => {
 })
 
 // Add a Comment
-app.post("/getcomments", async (req, res) => {
+app.post("/addcomment", async (req, res) => {
    const { content, postid } = req.body;
    const token = req.cookies.accessToken;
    if (!token) return res.status(401).json("Not logged in!");
@@ -459,12 +477,14 @@ app.post("/getcomments", async (req, res) => {
    })
 
    try {
-      const query = "INSERT INTO comments(content, created, commentuserid, commentpostid) VALUES ($1, NOW(), $2, $3)";
+      const query = "INSERT INTO comments(content, created, commentuserid, commentpostid) VALUES ($1, NOW(), $2, $3) RETURNING *";
       const values = [content, currentUserid, postid]
       const result = await pool.query(query, values);
 
       if (result.rows.length > 0) {
          res.status(200).json({success: true});
+      } else {
+         throw new Error("Insert Failed");
       }
    } catch (err) {
       console.error(err.message);
@@ -511,7 +531,7 @@ app.post("/getlikes", async (req, res) => {
       const result = await pool.query(query, values);
 
       if (result.rows.length > 0) {
-         res.status(200).json({success: true});
+         res.status(200).json(result.rows);
       }
    } catch (err) {
       console.error(err.message);
@@ -520,7 +540,7 @@ app.post("/getlikes", async (req, res) => {
 })
 
 // Add likes
-app.post("/addlikes", async (req, res) => {
+app.post("/addlike", async (req, res) => {
    const { postid } = req.body;
    const token = req.cookies.accessToken;
    if (!token) return res.status(401).json("Not logged in!");
@@ -531,7 +551,7 @@ app.post("/addlikes", async (req, res) => {
    })
 
    try {
-      const query = "INSERT INTO likes(likesuserid, likespostid) VALUES ($1, $2)"
+      const query = "INSERT INTO likes(likesuserid, likespostid) VALUES ($1, $2) RETURNING *"
       const values = [currentUserid, postid]
       const result = await pool.query(query, values);
 
@@ -545,7 +565,7 @@ app.post("/addlikes", async (req, res) => {
 })
 
 // Delete likes
-app.post("/deletelikes", async (req, res) => {
+app.post("/deletelike", async (req, res) => {
    const { postid } = req.body;
    const token = req.cookies.accessToken;
    if (!token) return res.status(401).json("Not logged in!");
@@ -560,9 +580,7 @@ app.post("/deletelikes", async (req, res) => {
       const values = [currentUserid, postid]
       const result = await pool.query(query, values);
 
-      if (result.rows.length > 0) {
-         res.status(200).json({success: true});
-      }
+      res.status(200).json({success: true});
    } catch (err) {
       console.error(err.message);
       res.status(500).json('Server Error');

@@ -24,8 +24,9 @@ const Share = () => {
                     return data
                 }),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['posts']})
+            queryClient.invalidateQueries({ queryKey: ['posts'] })
         }
+
     });
 
     const handleClick = async (e) => {
